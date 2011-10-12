@@ -13,11 +13,11 @@ class Module
     @last_docstring = ds
   end
 
-  def describe
-    printer_block = lambda { |method_name|
+  def describe &printer
+    printer_block = printer || lambda { |method_name|
       20.times { print '-' }
       puts
-
+      
       puts "#{self.inspect}##{method_name.to_s}"
       puts "(args go here)"
       puts "  #{self.doc_for method_name}"
