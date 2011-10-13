@@ -1,20 +1,10 @@
 class Module
-  alias old_method_added method_added
-
-  def method_added method
-    if defined? @last_docstring
-      (@docstrings ||= {})[method] = @last_docstring
-      @last_docstring = nil
-    end
-    old_method_added method
-  end
-
   def ___ ds
     @last_docstring = ds
   end
 
   def describe &printer
-    printer_block = printer || lambda { |method_name|
+    printer_impl = printer || lambda { |method_name|
       20.times { print '-' }
       puts
       
@@ -25,13 +15,41 @@ class Module
     }
 
     puts "Instance Methods"
-    (self.instance_methods - Object.instance_methods).sort.each &printer_block
+    (self.instance_methods - Object.instance_methods).sort.each &printer_impl
+
+    puts "Class Methods"
+    (self.methods - Object.methods).sort.each &printer_impl
 
     @docstrings.count
   end
 
-  def doc_for method
-    @docstrings[method]
+  def doc_for method_name
+    @docstrings[method_name] # || (class << self; self; end).ancestors.find do |kind|
+    #   if desc = kind.doc_for(method_name)
+    #     return desc
+    #   end
+    # end
+  end
+
+  private 
+
+  alias old_method_added method_added
+
+  def do_magic method_name
+    if defined? @last_docstring
+      (@docstrings ||= {})[method_name] = @last_docstring
+      @last_docstring = nil
+    end
+
+    old_method_added method_name    
+  end  
+
+  def singleton_method_added method_name
+    do_magic method_name
+  end
+
+  def method_added method_name
+    do_magic method_name    
   end
 end
 
